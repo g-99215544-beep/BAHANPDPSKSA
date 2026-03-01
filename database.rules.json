@@ -1,0 +1,22 @@
+{
+  "_comments": [
+    "Firebase Realtime Database Rules — Portal Bahan Pembelajaran",
+    "Cara guna: Firebase Console → Realtime Database → Rules → tampal & Publish"
+  ],
+  "rules": {
+    "files": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "peep": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "stats": {
+      ".read": true,
+      "downloads": {
+        ".write": true
+      }
+    }
+  }
+}
