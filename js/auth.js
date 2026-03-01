@@ -1,39 +1,45 @@
 /* ═══════════════════════════════════════════════════════════
-   auth.js — Pengesahan Guru (Firebase Anonymous Auth)
+   auth.js — Pengesahan Admin
    ═══════════════════════════════════════════════════════════
-   Guru log masuk dengan kata laluan dalaman, kemudian sistem
-   menandatangani masuk ke Firebase secara tanpa nama (anonymous)
-   supaya operasi tulis ke Storage dan Database dibenarkan.
+   Admin log masuk dengan kata laluan sahaja.
+   Sesi kekal selama 24 jam walaupun selepas refresh halaman.
    ═══════════════════════════════════════════════════════════ */
 
-// Bukti masuk guru — ubah dalam fail ini jika perlu
-// ⚠️  Untuk keselamatan lebih tinggi, gunakan Firebase Auth (Email/Password)
-const GURU_USER = 'guru';
-const GURU_PASS = 'sekolah123';
+const ADMIN_PASS = 'admin123';
+
+const SESSION_KEY      = 'adminSession';
+const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 jam dalam milisaat
+
+function saveSession()    { localStorage.setItem(SESSION_KEY, Date.now().toString()); }
+function clearSession()   { localStorage.removeItem(SESSION_KEY); }
+function isSessionValid() {
+  const ts = localStorage.getItem(SESSION_KEY);
+  if (!ts) return false;
+  return (Date.now() - parseInt(ts, 10)) < SESSION_DURATION;
+}
 
 /**
- * Log masuk: semak kata laluan, kemudian daftarkan sesi Firebase.
+ * Log masuk: semak kata laluan, daftarkan sesi Firebase, simpan masa sesi.
  */
 async function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value.trim();
+  const p    = document.getElementById('loginPass').value.trim();
   const errEl = document.getElementById('loginErr');
   errEl.classList.remove('show');
 
-  if (u !== GURU_USER || p !== GURU_PASS) {
-    errEl.textContent = '⚠️ Nama pengguna atau kata laluan tidak betul!';
+  if (p !== ADMIN_PASS) {
+    errEl.textContent = '⚠️ Kata laluan tidak betul!';
     errEl.classList.add('show');
     return;
   }
 
   try {
-    // Daftar masuk Firebase secara tanpa nama supaya Storage rules dipenuhi
     await fbAuth.signInAnonymously();
+    saveSession();
     S.loggedIn = true;
     closeModal('loginModal');
     renderAuth();
     reRender();
-    toast('✅ Selamat datang, Guru!', 'success');
+    toast('✅ Selamat datang, Admin!', 'success');
   } catch (e) {
     console.error('Firebase sign-in error:', e);
     errEl.textContent = '❌ Gagal menyambung ke pelayan. Cuba lagi.';
@@ -42,7 +48,7 @@ async function doLogin() {
 }
 
 /**
- * Log keluar: tamatkan sesi Firebase dan kosongkan status.
+ * Log keluar: tamatkan sesi Firebase dan buang data sesi tempatan.
  */
 async function doLogout() {
   try {
@@ -50,6 +56,7 @@ async function doLogout() {
   } catch (e) {
     console.warn('Sign-out error:', e);
   }
+  clearSession();
   S.loggedIn = false;
   renderAuth();
   reRender();
@@ -58,17 +65,23 @@ async function doLogout() {
 
 /**
  * Pantau perubahan sesi Firebase.
- * Jika pengguna sudah log masuk sebelum ini (contoh: selepas refresh),
- * pulihkan status log masuk secara automatik.
- * Guard typeof digunakan kerana callback ini mungkin lebih awal dari app.js.
+ * Pulihkan log masuk jika sesi tempatan masih dalam tempoh 24 jam.
+ * Jika sesi sudah tamat, log keluar secara automatik.
  */
-fbAuth.onAuthStateChanged(user => {
-  // Tunggu sehingga app.js selesai dimuatkan
+fbAuth.onAuthStateChanged(async user => {
   if (typeof S === 'undefined' || typeof renderAuth === 'undefined') return;
-  if (user && !S.loggedIn) {
-    // Sesi Firebase masih aktif — anggap guru masih log masuk
-    S.loggedIn = true;
-    renderAuth();
-    // reRender dipanggil selepas data Firebase dimuatkan dalam init()
+
+  if (user) {
+    if (isSessionValid()) {
+      // Sesi masih sah — pulihkan status admin
+      S.loggedIn = true;
+      renderAuth();
+    } else {
+      // Sesi sudah tamat 24 jam — log keluar automatik
+      clearSession();
+      try { await fbAuth.signOut(); } catch (_) {}
+      S.loggedIn = false;
+      renderAuth();
+    }
   }
 });
