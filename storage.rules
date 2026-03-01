@@ -15,44 +15,42 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // ── Folder utama bahan pembelajaran ────────────────────
-    // Struktur: bahan/{subjek}/{kategori}/{tahun}/{topik}/{namaFail}
-    match /bahan/{allPaths=**} {
-
-      // BACA: Sesiapa boleh lihat fail (termasuk murid & ibu bapa)
-      allow read: if true;
-
-      // TULIS: Hanya pengguna yang log masuk (guru, anonymous Firebase)
-      // - Saiz fail: maksimum 50 MB
-      // - Jenis fail yang dibenarkan sahaja
-      allow write: if request.auth != null
-        && request.resource.size <= 50 * 1024 * 1024
-        && (
-          // Dokumen
-          request.resource.contentType.matches('application/pdf')
+    // ── Helper: jenis fail yang dibenarkan ──────────────────
+    function isAllowedType() {
+      return request.resource.contentType.matches('application/pdf')
           || request.resource.contentType.matches('application/msword')
           || request.resource.contentType.matches('application/vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document')
           || request.resource.contentType.matches('application/vnd\\.ms-powerpoint')
           || request.resource.contentType.matches('application/vnd\\.openxmlformats-officedocument\\.presentationml\\.presentation')
           || request.resource.contentType.matches('application/vnd\\.ms-excel')
           || request.resource.contentType.matches('application/vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet')
-          // Gambar
           || request.resource.contentType.matches('image/jpeg')
           || request.resource.contentType.matches('image/png')
           || request.resource.contentType.matches('image/gif')
           || request.resource.contentType.matches('image/webp')
-          // Video
           || request.resource.contentType.matches('video/mp4')
           || request.resource.contentType.matches('video/webm')
           || request.resource.contentType.matches('video/quicktime')
-          || request.resource.contentType.matches('video/x-msvideo')
-        );
-
-      // PADAM: Hanya pengguna yang log masuk boleh padam
-      allow delete: if request.auth != null;
+          || request.resource.contentType.matches('video/x-msvideo');
     }
 
-    // ── Blok semua akses lain secara lalai ─────────────────
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    function withinSizeLimit() {
+      return request.resource.size <= 50 * 1024 * 1024; // 50 MB
+    }
+
+    // ── Folder: bahan pembelajaran ──────────────────────────
+    // Struktur: bahan/{subjek}/{kategori}/{tahun}/{topik}/{namaFail}
+    match /bahan/{allPaths=**} {
+      allow read:   if true;
+      allow write:  if isAdmin() && withinSizeLimit() && isAllowedType();
+      allow delete: if isAdmin();
+    }
+
+    // ── Blok semua akses lain secara lalai ──────────────────
     match /{allPaths=**} {
       allow read, write: if false;
     }
