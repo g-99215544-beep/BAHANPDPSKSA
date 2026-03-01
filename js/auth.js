@@ -33,8 +33,8 @@ async function doLogin() {
   }
 
   try {
+    saveSession(); // simpan sebelum sign-in supaya onAuthStateChanged nampak sesi sah
     await fbAuth.signInAnonymously();
-    saveSession();
     S.loggedIn = true;
     closeModal('loginModal');
     renderAuth();
