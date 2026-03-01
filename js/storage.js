@@ -257,6 +257,21 @@ function buildViewerHTML(file) {
   const ext = file.name.split('.').pop().toLowerCase();
   const url = file.downloadURL;
 
+  // ── Thumbnail tersedia → papar serta-merta ──────────────────
+  if (file.thumbnailURL && ['pdf', 'docx'].includes(ext)) {
+    const isFullViewable = ext === 'pdf';
+    return `
+      <div class="thumb-viewer">
+        <img src="${escHtml(file.thumbnailURL)}" alt="Preview ${escHtml(file.name)}" class="thumb-img">
+        ${isFullViewable ? `
+          <div class="thumb-actions">
+            <button class="btn-full-view" onclick="loadFullPDF('${escHtml(file.downloadURL)}')">
+              📄 Lihat PDF Penuh
+            </button>
+          </div>` : ''}
+      </div>`;
+  }
+
   // Gambar — terus papar, tiada delay
   if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
     return `<img src="${escHtml(url)}" alt="${escHtml(file.name)}"
@@ -484,4 +499,22 @@ function openFileViewer(file) {
   if (ext === 'pdf')                        renderPDF(file.downloadURL);
   if (ext === 'docx')                       renderDocx(file.downloadURL);
   if (['xlsx','xls'].includes(ext))         renderExcel(file.downloadURL);
+}
+
+/**
+ * Gantikan thumbnail viewer dengan PDF.js penuh.
+ * Dipanggil dari butang "Lihat PDF Penuh".
+ * @param {string} url
+ */
+function loadFullPDF(url) {
+  const content = document.getElementById('viewerContent');
+  if (!content) return;
+  content.innerHTML = `
+    <div id="pdfContainer" style="overflow-y:auto;width:100%;height:100%;background:#525659;padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center;">
+      <div class="viewer-loading" id="viewerLoading">
+        <div class="viewer-spinner"></div>
+        <p>Memuatkan PDF...</p>
+      </div>
+    </div>`;
+  renderPDF(url);
 }
