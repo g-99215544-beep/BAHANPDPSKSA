@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Bahan Pembelajaran</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #0d3b7a;
+  --primary-light: #1a5cb8;
+  --accent: #f59e0b;
+  --accent-dark: #d97706;
+  --bg: #f0f5ff;
+  --card: #ffffff;
+  --text: #0f1f3d;
+  --muted: #6b7a99;
+  --border: #ccd9f0;
+  --green: #10b981;
+  --red: #ef4444;
+  --shadow: 0 4px 20px rgba(13,59,122,0.10);
+  --shadow-lg: 0 8px 40px rgba(13,59,122,0.16);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+header {
+  background: var(--primary);
+  padding: 0 1.5rem;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 16px rgba(13,59,122,0.25);
+}
+.logo { font-family: 'Baloo 2', cursive; font-size: 1.2rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 36px; height: 36px; background: var(--accent); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.header-right { display: flex; align-items: center; gap: 0.8rem; }
+.stats-mini { display: flex; gap: 1.2rem; }
+.stat-mini { color: rgba(255,255,255,0.7); font-size: 0.75rem; font-weight: 700; text-align: center; }
+.stat-mini strong { display: block; color: #fff; font-size: 1rem; font-family: 'Baloo 2', cursive; }
+.btn-login { background: var(--accent); color: #fff; border: none; border-radius: 25px; padding: 8px 20px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+.btn-login:hover { background: var(--accent-dark); transform: scale(1.04); }
+.user-info { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; font-size: 0.85rem; }
+.avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; }
+.btn-logout { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 5px 14px; font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+.hero { background: linear-gradient(135deg, #0d3b7a 0%, #1a5cb8 55%, #2176d4 100%); padding: 2.2rem 1.5rem 2rem; text-align: center; color: #fff; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 15% 50%, rgba(245,158,11,0.18) 0%, transparent 55%), radial-gradient(ellipse at 85% 20%, rgba(255,255,255,0.07) 0%, transparent 50%); }
+.hero-content { position: relative; }
+.hero h1 { font-family: 'Baloo 2', cursive; font-size: clamp(1.5rem,4vw,2.4rem); font-weight: 900; margin-bottom: 0.3rem; }
+.hero p { font-size: 0.92rem; opacity: 0.85; margin-bottom: 1.4rem; }
+.search-wrap { max-width: 480px; margin: 0 auto; display: flex; background: #fff; border-radius: 40px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+.search-wrap input { flex:1; border:none; outline:none; padding: 11px 20px; font-family: 'Nunito', sans-serif; font-size: 0.9rem; color: var(--text); }
+.search-wrap button { background: var(--accent); border:none; color:#fff; padding: 11px 22px; font-size: 1.05rem; cursor:pointer; transition: background 0.2s; }
+.search-wrap button:hover { background: var(--accent-dark); }
+
+.breadcrumb-bar { background: #fff; border-bottom: 1px solid var(--border); padding: 0.65rem 1.5rem; display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; flex-wrap: wrap; }
+.bc-item { color: var(--primary); cursor: pointer; transition: color 0.15s; }
+.bc-item:hover { color: var(--accent-dark); }
+.bc-item.active { color: var(--muted); cursor: default; }
+.bc-sep { color: var(--border); }
+.bc-back { background: var(--bg); border: 1.5px solid var(--border); border-radius: 20px; padding: 4px 12px; color: var(--primary); font-size: 0.78rem; font-weight: 800; cursor: pointer; margin-right: 6px; transition: all 0.18s; }
+.bc-back:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.layout { display: flex; min-height: calc(100vh - 64px); }
+
+.sidebar { width: 215px; flex-shrink: 0; background: var(--card); border-right: 1.5px solid var(--border); padding: 1.2rem 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+.sidebar-label { font-size: 0.7rem; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; padding: 0 1.2rem; margin-bottom: 0.5rem; }
+.subj-btn { width: 100%; text-align: left; background: none; border: none; padding: 10px 1.2rem; cursor: pointer; font-family: 'Nunito', sans-serif; font-size: 0.87rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 9px; transition: all 0.18s; border-left: 3px solid transparent; }
+.subj-btn:hover { background: var(--bg); color: var(--primary); }
+.subj-btn.active { background: #e8f0fd; color: var(--primary); border-left-color: var(--primary); }
+.subj-emoji { font-size: 1rem; width: 22px; text-align: center; }
+.subj-count { margin-left: auto; background: var(--bg); color: var(--muted); font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 10px; }
+.subj-btn.active .subj-count { background: var(--primary); color: #fff; }
+
+.content { flex: 1; padding: 1.5rem; }
+
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.cat-card { background: var(--card); border-radius: 20px; border: 2px solid var(--border); padding: 2rem 1.5rem; cursor: pointer; text-align: center; transition: all 0.22s; box-shadow: var(--shadow); }
+.cat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--primary-light); }
+.cat-icon { font-size: 3rem; margin-bottom: 0.7rem; display: block; }
+.cat-name { font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-bottom: 0.25rem; }
+.cat-desc { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+.cat-badge { display: inline-block; margin-top: 0.7rem; background: var(--bg); color: var(--primary); font-size: 0.75rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; }
+
+.year-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+.year-card { background: var(--card); border-radius: 16px; border: 2px solid var(--border); padding: 1.5rem 1rem; cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: var(--shadow); }
+.year-card:hover { transform: translateY(-3px); border-color: var(--primary-light); box-shadow: var(--shadow-lg); }
+.year-num { font-family: 'Baloo 2', cursive; font-size: 2.5rem; font-weight: 900; color: var(--primary); line-height: 1; }
+.year-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-top: 4px; }
+.year-count { margin-top: 0.6rem; font-size: 0.75rem; font-weight: 800; color: var(--primary); background: var(--bg); padding: 3px 10px; border-radius: 12px; display: inline-block; }
+
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem; }
+.section-title { font-family: 'Baloo 2', cursive; font-size: 1.15rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 7px; }
+.btn-upload-main { display: flex; align-items: center; gap: 6px; background: var(--primary); color: #fff; border: none; border-radius: 25px; padding: 9px 20px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 10px rgba(13,59,122,0.2); }
+.btn-upload-main:hover { background: var(--primary-light); transform: translateY(-1px); }
+.btn-add-peeper { display: flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; border: none; border-radius: 25px; padding: 9px 20px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+.btn-add-peeper:hover { background: var(--accent-dark); transform: translateY(-1px); }
+
+.topic-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.topic-card { background: var(--card); border-radius: 14px; border: 1.5px solid var(--border); overflow: hidden; box-shadow: var(--shadow); transition: box-shadow 0.2s; }
+.topic-card:hover { box-shadow: var(--shadow-lg); }
+.topic-header { padding: 0.9rem 1.2rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; }
+.topic-header:hover { background: var(--bg); }
+.topic-num { width: 27px; height: 27px; background: var(--primary); color: #fff; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 900; flex-shrink: 0; }
+.topic-name { font-weight: 800; font-size: 0.9rem; flex: 1; }
+.topic-file-count { font-size: 0.72rem; font-weight: 700; color: var(--muted); background: var(--bg); padding: 3px 9px; border-radius: 12px; flex-shrink: 0; }
+.topic-chevron { color: var(--muted); font-size: 0.75rem; transition: transform 0.2s; flex-shrink: 0; }
+.topic-chevron.open { transform: rotate(180deg); }
+
+.topic-files { border-top: 1.5px solid var(--border); display: none; }
+.topic-files.open { display: block; animation: fadeDown 0.2s ease; }
+@keyframes fadeDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+.file-item { display: flex; align-items: center; gap: 10px; padding: 0.65rem 1.2rem; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.file-item:last-child { border-bottom: none; }
+.file-item:hover { background: #fafcff; }
+.file-type-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+.ft-pdf { background: #fee2e2; } .ft-doc { background: #dbeafe; } .ft-img { background: #d1fae5; } .ft-ppt { background: #fff3cd; } .ft-other { background: #f3f4f6; }
+.file-info { flex: 1; min-width: 0; }
+.file-name { font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-meta { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+.file-actions { display: flex; gap: 5px; flex-shrink: 0; }
+.btn-dl { background: var(--primary); color: #fff; border: none; border-radius: 18px; padding: 5px 14px; font-family: 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; gap: 4px; }
+.btn-dl:hover { background: var(--primary-light); }
+.btn-sm { width: 28px; height: 28px; border-radius: 7px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; transition: all 0.18s; }
+.btn-del { background: #fee2e2; color: var(--red); }
+.btn-del:hover { background: var(--red); color: #fff; }
+
+.no-files { padding: 0.9rem 1.2rem; font-size: 0.82rem; color: var(--muted); font-weight: 600; font-style: italic; }
+.upload-to-topic { padding: 0.6rem 1.2rem; border-top: 1px dashed var(--border); }
+.btn-upload-topic { background: transparent; color: var(--primary); border: 1.5px dashed var(--border); border-radius: 20px; padding: 5px 16px; font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; gap: 5px; }
+.btn-upload-topic:hover { background: var(--primary); color: #fff; border-style: solid; border-color: var(--primary); }
+
+.empty-state { text-align: center; padding: 3.5rem 1rem; color: var(--muted); }
+.empty-icon { font-size: 3rem; margin-bottom: 0.8rem; }
+.empty-state h3 { font-family: 'Baloo 2', cursive; font-size: 1.15rem; color: var(--primary); margin-bottom: 0.3rem; }
+.empty-state p { font-size: 0.82rem; font-weight: 600; }
+
+.view-title { font-family: 'Baloo 2', cursive; font-size: 1.2rem; font-weight: 800; color: var(--primary); margin-bottom: 0.25rem; }
+.view-sub { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-bottom: 1.2rem; }
+
+/* HOME GRID */
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); gap: 1rem; }
+.home-subj-card { background: var(--card); border-radius: 16px; border: 2px solid var(--border); padding: 1.5rem 1rem; cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: var(--shadow); }
+.home-subj-card:hover { transform: translateY(-4px); border-color: var(--primary-light); box-shadow: var(--shadow-lg); }
+
+/* SEARCH RESULTS */
+.sr-item { background: var(--card); border-radius: 12px; border: 1.5px solid var(--border); padding: 0.9rem 1.2rem; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); transition: all 0.18s; }
+.sr-item:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+.sr-path { font-size: 0.72rem; color: var(--muted); font-weight: 700; margin-top: 2px; }
+.sr-path span { color: var(--primary); }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.48); z-index: 500; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(3px); }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: #fff; border-radius: 20px; padding: 2rem; width: min(420px, 92vw); box-shadow: 0 20px 60px rgba(0,0,0,0.18); transform: scale(0.95); transition: transform 0.2s; max-height: 90vh; overflow-y: auto; }
+.modal-overlay.open .modal { transform: scale(1); }
+.modal-big { width: min(560px, 94vw); }
+.modal h2 { font-family: 'Baloo 2', cursive; font-size: 1.35rem; font-weight: 800; color: var(--primary); margin-bottom: 0.25rem; }
+.modal-sub { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-bottom: 1.4rem; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+.form-group input, .form-group select { width: 100%; border: 2px solid var(--border); border-radius: 10px; padding: 9px 13px; font-family: 'Nunito', sans-serif; font-size: 0.88rem; color: var(--text); outline: none; transition: border-color 0.18s; }
+.form-group input:focus, .form-group select:focus { border-color: var(--primary-light); }
+.btn-primary { width: 100%; background: var(--primary); color: #fff; border: none; border-radius: 30px; padding: 11px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; margin-top: 0.4rem; }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-cancel { width: 100%; background: var(--bg); color: var(--muted); border: 1.5px solid var(--border); border-radius: 30px; padding: 10px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
+.btn-cancel:hover { background: var(--border); }
+.error-msg { background: #fee2e2; color: var(--red); border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; font-weight: 700; margin-bottom: 1rem; display: none; }
+.error-msg.show { display: block; }
+.success-msg { background: #d1fae5; color: var(--green); border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; font-weight: 700; margin-bottom: 1rem; display: none; }
+.success-msg.show { display: block; }
+
+.file-drop { border: 2.5px dashed var(--border); border-radius: 12px; padding: 1.4rem; text-align: center; cursor: pointer; transition: all 0.2s; margin-top: 0.3rem; }
+.file-drop:hover, .file-drop.dragover { border-color: var(--primary-light); background: var(--bg); }
+.file-drop-icon { font-size: 2rem; margin-bottom: 0.4rem; }
+.file-drop p { font-size: 0.82rem; color: var(--muted); font-weight: 700; }
+.file-drop small { font-size: 0.7rem; color: var(--muted); }
+#fileInput { display: none; }
+.sel-files-list { margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.sel-file { background: var(--bg); border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; }
+.sel-file-remove { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; line-height: 1; }
+.sel-file-remove:hover { color: var(--red); }
+
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--primary); color: #fff; border-radius: 12px; padding: 11px 18px; font-weight: 700; font-size: 0.86rem; box-shadow: var(--shadow-lg); z-index: 999; transform: translateY(20px); opacity: 0; transition: all 0.3s; pointer-events: none; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.anim { animation: fadeUp 0.3s ease both; }
+.d1 { animation-delay:0.04s; } .d2 { animation-delay:0.08s; } .d3 { animation-delay:0.12s; } .d4 { animation-delay:0.16s; } .d5 { animation-delay:0.2s; } .d6 { animation-delay:0.24s; }
+
+@media (max-width:680px) { .sidebar { display:none; } .cat-grid { grid-template-columns:1fr; } .year-grid { grid-template-columns:repeat(2,1fr); } .stats-mini { display:none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📚</div>
+    Portal Bahan Pembelajaran
+  </div>
+  <div class="header-right">
+    <div class="stats-mini" id="statsBar"></div>
+    <div id="authArea"></div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-content">
+    <h1>📖 Pusat Sumber Digital Sekolah</h1>
+    <p>Cari dan muat turun bahan pembelajaran dengan mudah — percuma untuk semua guru</p>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Cari nama fail, tajuk, subjek..." oninput="handleSearch(this.value)">
+      <button onclick="handleSearch(document.getElementById('searchInput').value)">🔍</button>
+    </div>
+  </div>
+</div>
+
+<div class="breadcrumb-bar" id="bcBar" style="display:none"></div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Subjek</div>
+    <div id="sidebarEl"></div>
+  </aside>
+  <div class="content" id="mainEl"></div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h2>🔐 Log Masuk Guru</h2>
+    <p class="modal-sub">Masukkan maklumat untuk menguruskan bahan pembelajaran</p>
+    <div class="error-msg" id="loginErr">Nama pengguna atau kata laluan tidak betul!</div>
+    <div class="form-group"><label>Nama Pengguna</label><input type="text" id="loginUser" placeholder="guru" autocomplete="username"></div>
+    <div class="form-group"><label>Kata Laluan</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" onclick="doLogin()">Log Masuk</button>
+    <button class="btn-cancel" onclick="closeModal('loginModal')">Batal</button>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal modal-big">
+    <h2>⬆️ Muat Naik Fail</h2>
+    <p class="modal-sub" id="uploadSubtitle"></p>
+    <div class="success-msg" id="uploadOk">✅ Fail berjaya dimuat naik!</div>
+    <div id="uploadFields"></div>
+    <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="onDrop(event)">
+      <div class="file-drop-icon">📂</div>
+      <p>Klik atau seret fail ke sini</p>
+      <small>PDF, Word (.doc/.docx), Imej, PowerPoint — tiada had bilangan fail</small>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg" onchange="onFileSelect(this.files)">
+    <div class="sel-files-list" id="selFilesList"></div>
+    <button class="btn-primary" onclick="doUpload()" style="margin-top:1rem;">Muat Naik Semua Fail</button>
+    <button class="btn-cancel" onclick="closeModal('uploadModal')">Batal</button>
+  </div>
+</div>
+
+<!-- ADD PEEP TOPIC MODAL -->
+<div class="modal-overlay" id="addPeepModal">
+  <div class="modal">
+    <h2>➕ Tambah Peperiksaan / Ujian</h2>
+    <p class="modal-sub" id="addPeepSub"></p>
+    <div class="form-group">
+      <label>Nama Peperiksaan / Ujian</label>
+      <input type="text" id="peepNameInput" placeholder="cth: Ujian Bulanan Mac 2025, Peperiksaan Pertengahan Tahun" onkeydown="if(event.key==='Enter')doAddPeep()">
+    </div>
+    <button class="btn-primary" onclick="doAddPeep()">Tambah</button>
+    <button class="btn-cancel" onclick="closeModal('addPeepModal')">Batal</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── SUBJECTS & DSKP DATA ───────────────────────────────────
+const SUBJECTS = [
+  { id:'bm',      name:'Bahasa Melayu',   emoji:'🇲🇾' },
+  { id:'bi',      name:'Bahasa Inggeris', emoji:'🇬🇧' },
+  { id:'math',    name:'Matematik',       emoji:'🔢' },
+  { id:'sains',   name:'Sains',           emoji:'🔬' },
+  { id:'sejarah', name:'Sejarah',         emoji:'📜' },
+];
+
+const DSKP = {
+  bm:{
+    1:['Kemahiran Mendengar dan Bertutur','Kemahiran Membaca','Kemahiran Menulis','Tatabahasa – Kata Nama','Tatabahasa – Kata Kerja','Kosa Kata Asas'],
+    2:['Kemahiran Mendengar dan Bertutur','Kemahiran Membaca','Kemahiran Menulis','Tatabahasa – Kata Adjektif','Tatabahasa – Kata Hubung','Ayat Tunggal'],
+    3:['Kemahiran Mendengar dan Bertutur','Kemahiran Membaca','Kemahiran Menulis','Peribahasa Mudah','Tatabahasa – Kata Sendi Nama','Ayat Majmuk'],
+    4:['Kemahiran Mendengar dan Bertutur','Kemahiran Membaca Kritis','Kemahiran Menulis','Tatabahasa – Kata Ganti Nama','Simpulan Bahasa','Penulisan Karangan'],
+    5:['Kemahiran Mendengar dan Bertutur','Kemahiran Membaca','Penulisan Karangan Laporan','Tatabahasa – Kata Bilangan','Peribahasa','Ulasan Teks'],
+    6:['Kemahiran Mendengar dan Bertutur','Kemahiran Membaca Kritis','Penulisan Karangan UPSR','Tatabahasa Lengkap','Peribahasa dan Simpulan Bahasa','Ulasan dan Rumusan']
+  },
+  bi:{
+    1:['Listening & Speaking','Reading Readiness','Writing – Sentence Building','Vocabulary – Colours & Numbers','Grammar – Nouns','Phonics Asas'],
+    2:['Listening & Speaking','Reading – Short Passages','Writing – Simple Sentences','Grammar – Verbs (Present Tense)','Vocabulary – Family & Home','Phonics & Spelling'],
+    3:['Listening & Speaking','Reading Comprehension','Writing – Guided Composition','Grammar – Adjectives','Grammar – Conjunctions','Vocabulary Building'],
+    4:['Listening & Speaking','Reading Comprehension','Writing – Narrative','Grammar – Past Tense','Grammar – Prepositions','Idioms & Expressions'],
+    5:['Listening & Speaking','Reading Comprehension','Writing – Descriptive Essay','Grammar – Future Tense','Grammar – Passive Voice','Vocabulary – Synonyms & Antonyms'],
+    6:['Listening & Speaking','Reading Comprehension UPSR','Writing – UPSR Format','Grammar Revision','Summary Writing','Literature Component']
+  },
+  math:{
+    1:['Nombor Bulat 1–10','Nombor Bulat 1–100','Operasi Tambah','Operasi Tolak','Masa dan Waktu','Ukuran Panjang'],
+    2:['Nombor Bulat hingga 1,000','Operasi Tambah (Mengumpul Semula)','Operasi Tolak (Mengumpul Semula)','Operasi Darab','Pengenalan Operasi Bahagi','Wang'],
+    3:['Nombor Bulat hingga 10,000','Operasi Tambah','Operasi Tolak','Operasi Darab','Operasi Bahagi','Pecahan','Wang','Masa dan Waktu'],
+    4:['Nombor Bulat hingga 100,000','Pecahan','Perpuluhan','Wang','Ukuran Panjang, Berat dan Isipadu','Bentuk Geometri','Statistik Asas'],
+    5:['Nombor Bulat hingga 1,000,000','Pecahan Wajar dan Tak Wajar','Perpuluhan','Peratusan','Nisbah','Geometri','Statistik'],
+    6:['Nombor Bulat','Pecahan','Perpuluhan dan Peratusan','Nisbah dan Kadaran','Sukatan dan Geometri','Statistik dan Kebarangkalian']
+  },
+  sains:{
+    1:['Kemahiran Saintifik Asas','Haiwan di Sekeliling Kita','Tumbuhan di Sekeliling Kita','Sumber Alam','Deria Manusia','Cuaca'],
+    2:['Kemahiran Saintifik','Kitaran Hidup Haiwan','Bahagian Tumbuhan','Keadaan Jirim','Sumber Tenaga','Kesihatan dan Kebersihan'],
+    3:['Kemahiran Saintifik','Pelbagai Haiwan','Pelbagai Tumbuhan','Daya Tarikan dan Daya Tolakan','Cahaya','Magnet'],
+    4:['Kemahiran Saintifik','Sistem Organ Manusia','Pembiakan Tumbuhan','Jirim dan Jirimnya','Tenaga Elektrik','Alam Sekitar'],
+    5:['Kemahiran Saintifik','Pembiakan Haiwan dan Tumbuhan','Campuran','Panas','Tenaga Cahaya dan Bunyi','Bumi dan Sumber Alam'],
+    6:['Kemahiran Saintifik','Kesihatan Manusia','Jirim','Sinar Cahaya','Elektrik dan Magnet','Teknologi dan Alam Sekitar']
+  },
+  sejarah:{
+    1:['Pengenalan Sejarah','Keluargaku','Sekolahku','Jiranku','Komuniti Setempat','Perayaan dan Adat Resam'],
+    2:['Sejarah Keluarga','Warisan Keluarga','Lambang Negara','Hari Kebangsaan','Tokoh Tempatan','Tradisi dan Budaya'],
+    3:['Kerajaan Awal Melayu','Kesultanan Melayu Melaka','Tokoh Kesultanan Melayu','Kedatangan Islam di Tanah Melayu','Sistem Pemerintahan Awal','Warisan Sejarah'],
+    4:['Keagungan Kesultanan Melayu Melaka','Kemerosotan Melaka','Penjajahan Barat di Tanah Melayu','Tokoh Pejuang','Penentangan Terhadap Penjajah','Perubahan Ekonomi'],
+    5:['Perjuangan Kemerdekaan','Tokoh Pengisytiharan Kemerdekaan','Pembentukan Malaysia','Cabaran Negara Bangsa','Pembangunan Negara','Perpaduan Nasional'],
+    6:['Pengukuhan Kemerdekaan','Pemimpin Negara','Dasar-dasar Pembangunan Negara','Malaysia di Persada Dunia','Wawasan dan Hala Tuju Negara','Patriotisme dan Semangat Kebangsaan']
+  }
+};
+
+// ─── STATE ───────────────────────────────────────────────────
+let S = {
+  loggedIn: false,
+  subj: null,
+  cat: null,
+  year: null,
+  searchQ: '',
+  uploadCtx: null,
+  selFiles: [],
+};
+
+// ─── STORAGE ─────────────────────────────────────────────────
+const getFiles  = () => { try { return JSON.parse(localStorage.getItem('pbp_files')||'[]'); } catch { return []; } };
+const saveFiles = f  => localStorage.setItem('pbp_files', JSON.stringify(f));
+const getDL     = () => { try { return parseInt(localStorage.getItem('pbp_dl')||'0'); } catch { return 0; } };
+const incDL     = () => localStorage.setItem('pbp_dl', getDL()+1);
+const getPeep   = (sj,y) => { try { return JSON.parse(localStorage.getItem(`pbp_peep_${sj}_${y}`)||'[]'); } catch { return []; } };
+const savePeep  = (sj,y,t) => localStorage.setItem(`pbp_peep_${sj}_${y}`, JSON.stringify(t));
+
+const uid = () => 'f'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+const fmtSize = b => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
+const fmtDate = () => new Date().toLocaleDateString('ms-MY',{day:'2-digit',month:'short',year:'numeric'});
+
+// ─── INIT ─────────────────────────────────────────────────────
+function init() {
+  renderSidebar();
+  renderStats();
+  renderAuth();
+  viewHome();
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────
+function renderSidebar() {
+  const files = getFiles();
+  document.getElementById('sidebarEl').innerHTML = SUBJECTS.map(s => {
+    const n = files.filter(f=>f.sj===s.id).length;
+    return `<button class="subj-btn ${S.subj===s.id?'active':''}" onclick="navSubj('${s.id}')">
+      <span class="subj-emoji">${s.emoji}</span>${s.name}
+      <span class="subj-count">${n}</span></button>`;
+  }).join('');
+}
+
+// ─── STATS ───────────────────────────────────────────────────
+function renderStats() {
+  const f = getFiles();
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-mini"><strong>${f.length}</strong>Fail</div>
+    <div class="stat-mini"><strong>5</strong>Subjek</div>
+    <div class="stat-mini"><strong>${getDL()}</strong>Muat Turun</div>`;
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────
+function renderAuth() {
+  document.getElementById('authArea').innerHTML = S.loggedIn
+    ? `<div class="user-info"><div class="avatar">G</div><span>Guru</span></div>
+       <button class="btn-logout" onclick="doLogout()">Log Keluar</button>`
+    : `<button class="btn-login" onclick="openModal('loginModal')">🔐 Log Masuk Guru</button>`;
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  if (u==='guru' && p==='sekolah123') {
+    S.loggedIn = true;
+    closeModal('loginModal');
+    renderAuth();
+    reRender();
+    toast('✅ Selamat datang, Guru!','success');
+  } else {
+    document.getElementById('loginErr').classList.add('show');
+  }
+}
+
+function doLogout() {
+  S.loggedIn = false;
+  renderAuth();
+  reRender();
+  toast('Log keluar berjaya','');
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────
+function navSubj(id) { S.subj=id; S.cat=null; S.year=null; S.searchQ=''; document.getElementById('searchInput').value=''; refresh(); viewCat(); }
+function navCat(cat) { S.cat=cat; S.year=null; refresh(); viewYear(); }
+function navYear(y)  { S.year=y; refresh(); viewTopics(); }
+
+function navBack() {
+  if (S.year!==null)      { S.year=null; refresh(); viewYear(); }
+  else if (S.cat!==null)  { S.cat=null; refresh(); viewCat(); }
+  else if (S.subj!==null) { S.subj=null; refresh(); viewHome(); }
+}
+
+function refresh() { renderSidebar(); renderBc(); }
+
+function reRender() {
+  renderSidebar(); renderStats();
+  if (S.searchQ)       showSearch(S.searchQ);
+  else if (S.year!==null) viewTopics();
+  else if (S.cat!==null)  viewYear();
+  else if (S.subj!==null) viewCat();
+  else viewHome();
+}
+
+// ─── BREADCRUMB ──────────────────────────────────────────────
+function renderBc() {
+  const bar = document.getElementById('bcBar');
+  const parts = [];
+  if (S.subj) { const s=SUBJECTS.find(x=>x.id===S.subj); parts.push({l:s.emoji+' '+s.name, fn:()=>navSubj(S.subj)}); }
+  if (S.cat)  parts.push({l: S.cat==='latihan'?'📝 Latihan':'📋 Peperiksaan', fn:()=>navCat(S.cat)});
+  if (S.year!==null) parts.push({l:'Tahun '+S.year, fn:null});
+  if (!parts.length) { bar.style.display='none'; return; }
+  bar.style.display='flex';
+  let h = `<button class="bc-back" onclick="navBack()">← Kembali</button>
+    <span class="bc-item" onclick="S.subj=null;S.cat=null;S.year=null;renderSidebar();renderBc();viewHome()">🏠 Laman Utama</span>`;
+  parts.forEach((p,i) => {
+    h += `<span class="bc-sep">›</span>`;
+    h += (p.fn && i<parts.length-1)
+      ? `<span class="bc-item" onclick="(${p.fn})()">${p.l}</span>`
+      : `<span class="bc-item active">${p.l}</span>`;
+  });
+  bar.innerHTML = h;
+}
+
+// ─── VIEWS ───────────────────────────────────────────────────
+function viewHome() {
+  S.subj=null; S.cat=null; S.year=null;
+  renderBc(); renderSidebar();
+  const files = getFiles();
+  document.getElementById('mainEl').innerHTML = `
+    <div class="view-title">Pilih Subjek</div>
+    <div class="view-sub">Klik subjek untuk mula mencari bahan pembelajaran</div>
+    <div class="home-grid">
+      ${SUBJECTS.map((s,i)=>{
+        const n=files.filter(f=>f.sj===s.id).length;
+        return `<div class="home-subj-card anim d${i+1}" onclick="navSubj('${s.id}')">
+          <div style="font-size:2.5rem;margin-bottom:0.6rem">${s.emoji}</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:1rem;font-weight:800;color:var(--primary)">${s.name}</div>
+          <div style="font-size:0.75rem;font-weight:800;color:var(--muted);margin-top:6px;background:var(--bg);padding:3px 10px;border-radius:12px;display:inline-block">${n} fail</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function viewCat() {
+  const s = SUBJECTS.find(x=>x.id===S.subj);
+  const files = getFiles();
+  const nl = files.filter(f=>f.sj===S.subj&&f.cat==='latihan').length;
+  const np = files.filter(f=>f.sj===S.subj&&f.cat==='peperiksaan').length;
+  document.getElementById('mainEl').innerHTML = `
+    <div class="view-title anim">${s.emoji} ${s.name}</div>
+    <div class="view-sub anim">Pilih kategori bahan</div>
+    <div class="cat-grid anim">
+      <div class="cat-card" onclick="navCat('latihan')">
+        <span class="cat-icon">📝</span>
+        <div class="cat-name">Latihan</div>
+        <div class="cat-desc">Latihan bertajuk mengikut silibus DSKP semasa</div>
+        <div class="cat-badge">${nl} fail</div>
+      </div>
+      <div class="cat-card" onclick="navCat('peperiksaan')">
+        <span class="cat-icon">📋</span>
+        <div class="cat-name">Peperiksaan</div>
+        <div class="cat-desc">Ujian bulanan, pertengahan tahun, akhir tahun</div>
+        <div class="cat-badge">${np} fail</div>
+      </div>
+    </div>`;
+}
+
+function viewYear() {
+  const s = SUBJECTS.find(x=>x.id===S.subj);
+  const catL = S.cat==='latihan'?'Latihan':'Peperiksaan';
+  const files = getFiles();
+  document.getElementById('mainEl').innerHTML = `
+    <div class="view-title anim">${s.emoji} ${s.name} › ${catL}</div>
+    <div class="view-sub anim">Pilih tahun</div>
+    <div class="year-grid">
+      ${[1,2,3,4,5,6].map((y,i)=>{
+        const n=files.filter(f=>f.sj===S.subj&&f.cat===S.cat&&f.year===y).length;
+        return `<div class="year-card anim d${i+1}" onclick="navYear(${y})">
+          <div class="year-num">${y}</div>
+          <div class="year-label">Tahun ${y}</div>
+          <div class="year-count">${n} fail</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function viewTopics() {
+  const s = SUBJECTS.find(x=>x.id===S.subj);
+  const catL = S.cat==='latihan'?'Latihan':'Peperiksaan';
+  const files = getFiles();
+  let topicsHtml = '';
+
+  if (S.cat==='latihan') {
+    const topics = DSKP[S.subj][S.year];
+    topicsHtml = topics.map((t,i)=>{
+      const tf = files.filter(f=>f.sj===S.subj&&f.cat==='latihan'&&f.year===S.year&&f.ti===i);
+      return topicCardHtml(t,i,tf,false);
+    }).join('');
+  } else {
+    const peeps = getPeep(S.subj, S.year);
+    topicsHtml = peeps.length===0
+      ? `<div class="empty-state"><div class="empty-icon">📋</div><h3>Tiada Peperiksaan Lagi</h3><p>${S.loggedIn?'Klik "Tambah Peperiksaan" untuk mula':'Belum ada peperiksaan ditambah oleh guru'}</p></div>`
+      : peeps.map((t,i)=>{
+          const tf = files.filter(f=>f.sj===S.subj&&f.cat==='peperiksaan'&&f.year===S.year&&f.ti===i);
+          return topicCardHtml(t,i,tf,true);
+        }).join('');
+  }
+
+  const topBtn = S.loggedIn
+    ? (S.cat==='latihan'
+        ? `<button class="btn-upload-main" onclick="openUploadModal()">⬆️ Muat Naik Latihan</button>`
+        : `<button class="btn-add-peeper" onclick="openAddPeep()">➕ Tambah Peperiksaan</button>`)
+    : '';
+
+  document.getElementById('mainEl').innerHTML = `
+    <div class="section-header anim">
+      <div class="section-title">${s.emoji} ${s.name} › ${catL} › Tahun ${S.year}</div>
+      ${topBtn}
+    </div>
+    <div class="topic-list">${topicsHtml}</div>`;
+}
+
+function topicCardHtml(tName, idx, tFiles, isPeep) {
+  const filesHtml = tFiles.length===0
+    ? `<div class="no-files">Tiada fail lagi${S.loggedIn?' – muat naik sekarang!':''}</div>`
+    : tFiles.map(f=>fileItemHtml(f)).join('');
+  const uploadBtn = S.loggedIn
+    ? `<div class="upload-to-topic"><button class="btn-upload-topic" onclick="openUploadToTopic(${idx},'${tName.replace(/'/g,"\\'")}')">⬆️ Tambah Fail ke Tajuk Ini</button></div>` : '';
+  const delTopicBtn = (S.loggedIn && isPeep)
+    ? `<button class="btn-sm btn-del" style="margin-left:4px" onclick="event.stopPropagation();delPeepTopic(${idx})" title="Padam tajuk">🗑</button>` : '';
+  return `<div class="topic-card anim">
+    <div class="topic-header" onclick="toggleTopic(this)">
+      <div class="topic-num">${idx+1}</div>
+      <div class="topic-name">${tName}</div>
+      <div class="topic-file-count">${tFiles.length} fail</div>
+      ${delTopicBtn}
+      <div class="topic-chevron">▼</div>
+    </div>
+    <div class="topic-files">
+      ${filesHtml}
+      ${uploadBtn}
+    </div>
+  </div>`;
+}
+
+function fileItemHtml(f) {
+  const ext = f.name.split('.').pop().toLowerCase();
+  const ic = ext==='pdf'?'ft-pdf':ext==='doc'||ext==='docx'?'ft-doc':ext==='ppt'||ext==='pptx'?'ft-ppt':ext==='png'||ext==='jpg'||ext==='jpeg'?'ft-img':'ft-other';
+  const em = ext==='pdf'?'📄':ext==='doc'||ext==='docx'?'📝':ext==='ppt'||ext==='pptx'?'📊':ext==='png'||ext==='jpg'||ext==='jpeg'?'🖼️':'📎';
+  const del = S.loggedIn?`<button class="btn-sm btn-del" onclick="delFile('${f.id}')" title="Padam">🗑</button>`:'';
+  return `<div class="file-item">
+    <div class="file-type-icon ${ic}">${em}</div>
+    <div class="file-info">
+      <div class="file-name">${f.name}</div>
+      <div class="file-meta">${f.size} • ${f.date}</div>
+    </div>
+    <div class="file-actions">
+      <button class="btn-dl" onclick="doDownload('${f.id}')">⬇️ Muat Turun</button>
+      ${del}
+    </div>
+  </div>`;
+}
+
+function toggleTopic(hdr) {
+  hdr.nextElementSibling.classList.toggle('open');
+  hdr.querySelector('.topic-chevron').classList.toggle('open');
+}
+
+// ─── SEARCH ──────────────────────────────────────────────────
+function handleSearch(q) {
+  S.searchQ = q.trim();
+  if (!S.searchQ) { reRender(); return; }
+  showSearch(S.searchQ);
+}
+
+function showSearch(q) {
+  document.getElementById('bcBar').style.display='none';
+  const files = getFiles();
+  const ql = q.toLowerCase();
+  const res = files.filter(f=>
+    f.name.toLowerCase().includes(ql)||
+    f.tName.toLowerCase().includes(ql)||
+    f.sjName.toLowerCase().includes(ql)
+  );
+  const del = id => S.loggedIn?`<button class="btn-sm btn-del" onclick="delFile('${id}')" title="Padam">🗑</button>`:'';
+  document.getElementById('mainEl').innerHTML = res.length===0
+    ? `<div class="empty-state"><div class="empty-icon">🔍</div><h3>Tiada Hasil</h3><p>Cuba kata kunci yang lain</p></div>`
+    : `<div style="margin-bottom:1rem"><span class="view-title">Hasil Carian: "${q}"</span> <span class="view-sub" style="display:inline">(${res.length} fail ditemui)</span></div>
+       <div style="display:flex;flex-direction:column;gap:0.7rem">
+         ${res.map(f=>{
+           const ext=f.name.split('.').pop().toLowerCase();
+           const em=ext==='pdf'?'📄':ext==='doc'||ext==='docx'?'📝':ext==='ppt'||ext==='pptx'?'📊':ext==='png'||ext==='jpg'?'🖼️':'📎';
+           return `<div class="sr-item anim">
+             <div style="font-size:1.5rem">${em}</div>
+             <div style="flex:1;min-width:0">
+               <div style="font-weight:800;font-size:0.88rem">${f.name}</div>
+               <div class="sr-path"><span>${f.sjName}</span> › ${f.cat==='latihan'?'Latihan':'Peperiksaan'} › Tahun ${f.year} › ${f.tName}</div>
+               <div style="font-size:0.72rem;color:var(--muted);font-weight:600">${f.size} • ${f.date}</div>
+             </div>
+             <div style="display:flex;gap:5px;flex-shrink:0">
+               <button class="btn-dl" onclick="doDownload('${f.id}')">⬇️ Muat Turun</button>
+               ${del(f.id)}
+             </div>
+           </div>`;
+         }).join('')}
+       </div>`;
+}
+
+// ─── UPLOAD ──────────────────────────────────────────────────
+function openUploadModal() {
+  // From section header — latihan, need topic dropdown
+  const s = SUBJECTS.find(x=>x.id===S.subj);
+  const topics = DSKP[S.subj][S.year];
+  S.uploadCtx = { sj:S.subj, cat:'latihan', year:S.year, ti:null, tName:null };
+  document.getElementById('uploadSubtitle').textContent = `${s.name} › Latihan › Tahun ${S.year}`;
+  document.getElementById('uploadFields').innerHTML = `
+    <div class="form-group">
+      <label>Pilih Tajuk DSKP</label>
+      <select id="topicSel" onchange="S.uploadCtx.ti=parseInt(this.value);S.uploadCtx.tName=this.options[this.selectedIndex].text.substring(4)">
+        <option value="">-- Pilih tajuk --</option>
+        ${topics.map((t,i)=>`<option value="${i}">${i+1}. ${t}</option>`).join('')}
+      </select>
+    </div>`;
+  S.selFiles=[];
+  renderSelFiles();
+  document.getElementById('uploadOk').classList.remove('show');
+  openModal('uploadModal');
+}
+
+function openUploadToTopic(ti, tName) {
+  const s = SUBJECTS.find(x=>x.id===S.subj);
+  S.uploadCtx = { sj:S.subj, cat:S.cat, year:S.year, ti, tName };
+  document.getElementById('uploadSubtitle').textContent = `${s.name} › ${S.cat==='latihan'?'Latihan':'Peperiksaan'} › Tahun ${S.year} › ${tName}`;
+  document.getElementById('uploadFields').innerHTML = `<div style="background:var(--bg);border-radius:8px;padding:9px 13px;font-size:0.85rem;font-weight:700;color:var(--primary);margin-bottom:0.5rem">📌 ${tName}</div>`;
+  S.selFiles=[];
+  renderSelFiles();
+  document.getElementById('uploadOk').classList.remove('show');
+  openModal('uploadModal');
+}
+
+function onFileSelect(fl) { for(const f of fl) S.selFiles.push(f); renderSelFiles(); }
+function onDrop(e) { e.preventDefault(); document.getElementById('fileDrop').classList.remove('dragover'); onFileSelect(e.dataTransfer.files); }
+function renderSelFiles() {
+  document.getElementById('selFilesList').innerHTML = S.selFiles.map((f,i)=>
+    `<div class="sel-file">📎 ${f.name} <span style="color:var(--muted)">(${fmtSize(f.size)})</span>
+     <button class="sel-file-remove" onclick="S.selFiles.splice(${i},1);renderSelFiles()">✕</button></div>`
+  ).join('');
+}
+
+function doUpload() {
+  const ctx = S.uploadCtx;
+  if (!ctx) return;
+
+  // Resolve topic index for latihan via dropdown
+  if (ctx.cat==='latihan' && ctx.ti===null) {
+    const sel = document.getElementById('topicSel');
+    if (!sel || sel.value==='') { toast('Sila pilih tajuk terlebih dahulu!','error'); return; }
+    ctx.ti = parseInt(sel.value);
+    ctx.tName = DSKP[ctx.sj][ctx.year][ctx.ti];
+  }
+
+  if (S.selFiles.length===0) { toast('Sila pilih sekurang-kurangnya satu fail!','error'); return; }
+
+  // For peperiksaan get topic name
+  if (ctx.cat==='peperiksaan' && !ctx.tName) {
+    const peeps = getPeep(ctx.sj, ctx.year);
+    ctx.tName = peeps[ctx.ti];
+  }
+
+  const s = SUBJECTS.find(x=>x.id===ctx.sj);
+  const files = getFiles();
+  S.selFiles.forEach(f=>{
+    files.push({
+      id: uid(), name: f.name, size: fmtSize(f.size), date: fmtDate(),
+      sj: ctx.sj, sjName: s.name, cat: ctx.cat, year: ctx.year,
+      ti: ctx.ti, tName: ctx.tName
+    });
+  });
+  saveFiles(files);
+  S.selFiles=[];
+  renderSelFiles();
+  document.getElementById('uploadOk').classList.add('show');
+  toast(`✅ ${files.filter(f=>f.sj===ctx.sj).length} fail dalam sistem!`,'success');
+  setTimeout(()=>{ closeModal('uploadModal'); reRender(); }, 1100);
+}
+
+// ─── ADD PEEP ────────────────────────────────────────────────
+function openAddPeep() {
+  const s = SUBJECTS.find(x=>x.id===S.subj);
+  document.getElementById('addPeepSub').textContent = `${s.name} › Peperiksaan › Tahun ${S.year}`;
+  document.getElementById('peepNameInput').value='';
+  openModal('addPeepModal');
+}
+
+function doAddPeep() {
+  const n = document.getElementById('peepNameInput').value.trim();
+  if (!n) { toast('Sila masukkan nama peperiksaan!','error'); return; }
+  const tops = getPeep(S.subj, S.year);
+  tops.push(n);
+  savePeep(S.subj, S.year, tops);
+  closeModal('addPeepModal');
+  toast('✅ Peperiksaan berjaya ditambah!','success');
+  reRender();
+}
+
+// ─── DELETE ──────────────────────────────────────────────────
+function delFile(id) {
+  if (!confirm('Padam fail ini?')) return;
+  saveFiles(getFiles().filter(f=>f.id!==id));
+  reRender();
+  toast('Fail dipadam','');
+}
+
+function delPeepTopic(idx) {
+  if (!confirm('Padam tajuk ini dan semua failnya?')) return;
+  const tops = getPeep(S.subj,S.year);
+  tops.splice(idx,1);
+  savePeep(S.subj,S.year,tops);
+  // Reindex files
+  const files = getFiles().filter(f=>{
+    if (f.sj===S.subj&&f.cat==='peperiksaan'&&f.year===S.year) {
+      if (f.ti===idx) return false;
+      if (f.ti>idx) f.ti-=1;
+    }
+    return true;
+  });
+  saveFiles(files);
+  reRender();
+  toast('Tajuk dipadam','');
+}
+
+// ─── DOWNLOAD ────────────────────────────────────────────────
+function doDownload(id) {
+  incDL(); renderStats();
+  toast('⬇️ Muat turun dimulakan...','success');
+}
+
+// ─── MODAL ───────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.getElementById('loginErr')?.classList.remove('show');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+(type||'');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{ if(e.target===el) closeModal(el.id); });
+});
+
+init();
+</script>
+</body>
+</html>
