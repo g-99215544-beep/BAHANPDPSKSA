@@ -162,6 +162,7 @@ async function deleteFileFromStorage(storagePath) {
  * @returns {Promise<Blob|null>} - JPG blob atau null jika gagal
  */
 async function generatePdfThumbnail(file) {
+  const canvas = document.createElement('canvas');
   try {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -173,15 +174,17 @@ async function generatePdfThumbnail(file) {
     const scale    = Math.min(1.5, 900 / viewport.width);
     const vp       = page.getViewport({ scale });
 
-    const canvas    = document.createElement('canvas');
-    canvas.width    = vp.width;
-    canvas.height   = vp.height;
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
 
     return await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
   } catch (e) {
     console.warn('generatePdfThumbnail gagal:', e);
     return null;
+  } finally {
+    canvas.width  = 0;
+    canvas.height = 0;
   }
 }
 
@@ -231,11 +234,16 @@ async function generateDocxThumbnail(file) {
  * @returns {Promise<{ thumbPath: string, thumbnailURL: string }>}
  */
 async function uploadThumbnail(blob, basePath) {
-  const thumbPath = basePath + '_thumb.jpg';
-  const ref = fbStorage.ref(thumbPath);
-  const task = await ref.put(blob, { contentType: 'image/jpeg' });
-  const thumbnailURL = await task.ref.getDownloadURL();
-  return { thumbPath, thumbnailURL };
+  try {
+    const thumbPath = basePath + '_thumb.jpg';
+    const ref = fbStorage.ref(thumbPath);
+    const snapshot = await ref.put(blob, { contentType: 'image/jpeg' });
+    const thumbnailURL = await snapshot.ref.getDownloadURL();
+    return { thumbPath, thumbnailURL };
+  } catch (e) {
+    console.warn('uploadThumbnail gagal:', e);
+    return null;
+  }
 }
 
 // ── PENONTON FAIL (VIEWER) ────────────────────────────────────
