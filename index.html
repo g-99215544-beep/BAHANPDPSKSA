@@ -85,10 +85,10 @@
          ondrop="onDrop(event)">
       <div class="file-drop-icon">📂</div>
       <p>Klik atau seret fail ke sini</p>
-      <small>PDF · Word · PowerPoint · Excel · Gambar · Video &mdash; maks. 50 MB setiap fail</small>
+      <small>PDF · Word · Excel · Gambar · Video &mdash; maks. 50 MB setiap fail</small>
     </div>
     <input type="file" id="fileInput" multiple
-           accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.mov"
+           accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.mov"
            onchange="onFileSelect(this.files)">
 
     <!-- Senarai fail dipilih -->
@@ -150,6 +150,12 @@
 
 <!-- ══════════════════ PDF.js ══════════════════ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- ══════════════════ docx-preview (Word) ══════════════════ -->
+<script src="https://unpkg.com/docx-preview@0.3.2/dist/docx-preview.min.js"></script>
+
+<!-- ══════════════════ SheetJS (Excel) ══════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- ══════════════════ FIREBASE SDK (Compat) ══════════════════ -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
