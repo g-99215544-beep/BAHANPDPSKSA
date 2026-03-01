@@ -543,6 +543,9 @@ async function delFile(id) {
   if (file && file.storagePath) {
     await deleteFileFromStorage(file.storagePath);
   }
+  if (file && file.thumbPath) {
+    await deleteFileFromStorage(file.thumbPath);
+  }
   await dbDeleteFile(id);
   toast('Fail dipadam', '');
   // S.files dikemas kini secara automatik melalui listener
@@ -558,6 +561,7 @@ async function delPeepTopic(idx) {
   );
   for (const f of topFiles) {
     await deleteFileFromStorage(f.storagePath);
+    if (f.thumbPath) await deleteFileFromStorage(f.thumbPath);
     await dbDeleteFile(f.id);
   }
 
