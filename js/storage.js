@@ -7,7 +7,6 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const ALLOWED_EXTENSIONS = [
   'pdf',
   'doc', 'docx',
-  'ppt', 'pptx',
   'xls', 'xlsx',
   'jpg', 'jpeg', 'png', 'gif', 'webp',
   'mp4', 'webm', 'mov', 'avi',
@@ -24,7 +23,7 @@ function getFileTypeInfo(filename) {
   const ext = filename.split('.').pop().toLowerCase();
   if (ext === 'pdf')                          return { icon: '📄', cls: 'ft-pdf' };
   if (['doc','docx'].includes(ext))           return { icon: '📝', cls: 'ft-doc' };
-  if (['ppt','pptx'].includes(ext))           return { icon: '📊', cls: 'ft-ppt' };
+  if (['ppt','pptx'].includes(ext))           return { icon: '🚫', cls: 'ft-other' };
   if (['xls','xlsx'].includes(ext))           return { icon: '📗', cls: 'ft-doc' };
   if (['jpg','jpeg','png','gif','webp'].includes(ext)) return { icon: '🖼️', cls: 'ft-img' };
   if (['mp4','webm','mov','avi'].includes(ext))        return { icon: '🎬', cls: 'ft-vid' };
@@ -192,22 +191,35 @@ function buildViewerHTML(file) {
       </div>`;
   }
 
-  // Word / PowerPoint / Excel — Google Docs Viewer + spinner
-  if (['doc','docx','ppt','pptx','xls','xlsx'].includes(ext)) {
-    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+  // Word (.docx) — docx-preview (render terus dalam browser)
+  if (ext === 'docx') {
     return `
       <div class="viewer-loading" id="viewerLoading">
         <div class="viewer-spinner"></div>
-        <p>Memuatkan dokumen...<br><small>Ini mungkin mengambil masa 10–30 saat</small></p>
-        <a href="${escHtml(url)}" target="_blank" class="btn-open-tab" style="margin-top:1rem">
-          🔗 Buka di Tab Baru (lebih laju)
-        </a>
+        <p>Memuatkan dokumen Word...</p>
       </div>
-      <iframe src="${escHtml(viewerUrl)}" title="${escHtml(file.name)}"
-        style="width:100%;height:100%;border:none;flex:1;display:none"
-        onload="document.getElementById('viewerLoading').style.display='none';this.style.display='block'"
-        onerror="document.getElementById('viewerLoading').innerHTML='<div class=viewer-fallback><div class=big-icon>📄</div><p>Fail tidak dapat dipapar.</p><a href=\'${escHtml(url)}\' target=\'_blank\' class=btn-open-tab>⬇️ Muat Turun</a></div>'">
-      </iframe>`;
+      <div id="docxContainer" class="docx-container" style="display:none"></div>`;
+  }
+
+  // Word lama (.doc) — tidak boleh dipapar, tawar muat turun
+  if (ext === 'doc') {
+    return `
+      <div class="viewer-fallback">
+        <div class="big-icon">📝</div>
+        <h4>${escHtml(file.name)}</h4>
+        <p>Format .doc lama tidak boleh dipapar secara langsung.<br>Sila muat turun untuk membukanya.</p>
+        <a href="${escHtml(url)}" target="_blank" download="${escHtml(file.name)}" class="btn-open-tab">⬇️ Muat Turun Fail</a>
+      </div>`;
+  }
+
+  // Excel (.xlsx / .xls) — SheetJS (render jadual HTML)
+  if (['xlsx', 'xls'].includes(ext)) {
+    return `
+      <div class="viewer-loading" id="viewerLoading">
+        <div class="viewer-spinner"></div>
+        <p>Memuatkan hamparan Excel...</p>
+      </div>
+      <div id="excelContainer" class="excel-container" style="display:none"></div>`;
   }
 
   // Jenis lain — fallback dengan muat turun
@@ -265,6 +277,106 @@ async function renderPDF(url) {
 }
 
 /**
+ * Render fail Word (.docx) menggunakan docx-preview.
+ * @param {string} url - URL fail .docx
+ */
+async function renderDocx(url) {
+  const container = document.getElementById('docxContainer');
+  const loadingEl = document.getElementById('viewerLoading');
+  if (!container) return;
+
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    if (loadingEl) loadingEl.remove();
+    container.style.display = 'block';
+    await docx.renderAsync(blob, container, null, {
+      className: 'docx-render',
+      inWrapper: true,
+      ignoreWidth: false,
+      ignoreHeight: true,
+      ignoreFonts: false,
+      breakPages: true,
+      useBase64URL: true,
+    });
+  } catch (e) {
+    console.error('docx-preview error:', e);
+    if (container) {
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div class="viewer-fallback">
+          <div class="big-icon">📝</div>
+          <h4>Dokumen tidak dapat dipapar</h4>
+          <p>Sila muat turun fail untuk membukanya.</p>
+          <a href="${escHtml(url)}" target="_blank" download class="btn-open-tab">⬇️ Muat Turun Dokumen</a>
+        </div>`;
+    }
+  }
+}
+
+/**
+ * Render hamparan Excel (.xlsx/.xls) menggunakan SheetJS.
+ * @param {string} url - URL fail Excel
+ */
+async function renderExcel(url) {
+  const container = document.getElementById('excelContainer');
+  const loadingEl = document.getElementById('viewerLoading');
+  if (!container) return;
+
+  try {
+    const resp = await fetch(url);
+    const arrayBuf = await resp.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(arrayBuf), { type: 'array' });
+
+    if (loadingEl) loadingEl.remove();
+    container.style.display = 'block';
+
+    // Bina tab untuk setiap helaian
+    const tabBar = document.createElement('div');
+    tabBar.className = 'excel-tabs';
+    const tableArea = document.createElement('div');
+    tableArea.className = 'excel-table-area';
+    container.appendChild(tabBar);
+    container.appendChild(tableArea);
+
+    wb.SheetNames.forEach((name, i) => {
+      const tab = document.createElement('button');
+      tab.className = 'excel-tab' + (i === 0 ? ' active' : '');
+      tab.textContent = name;
+      tab.onclick = () => {
+        document.querySelectorAll('.excel-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        showSheet(wb, name, tableArea);
+      };
+      tabBar.appendChild(tab);
+    });
+
+    showSheet(wb, wb.SheetNames[0], tableArea);
+  } catch (e) {
+    console.error('SheetJS error:', e);
+    if (container) {
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div class="viewer-fallback">
+          <div class="big-icon">📗</div>
+          <h4>Hamparan tidak dapat dipapar</h4>
+          <p>Sila muat turun fail untuk membukanya.</p>
+          <a href="${escHtml(url)}" target="_blank" download class="btn-open-tab">⬇️ Muat Turun Fail</a>
+        </div>`;
+    }
+  }
+}
+
+/**
+ * Papar satu helaian Excel sebagai jadual HTML.
+ */
+function showSheet(wb, sheetName, area) {
+  const ws = wb.Sheets[sheetName];
+  const html = XLSX.utils.sheet_to_html(ws, { editable: false });
+  area.innerHTML = `<div class="excel-table-wrap">${html}</div>`;
+}
+
+/**
  * Buka modal viewer dengan kandungan fail.
  * @param {object} file - objek fail
  */
@@ -276,7 +388,8 @@ function openFileViewer(file) {
   document.getElementById('viewerNewTabBtn').href = file.downloadURL;
   openModal('viewerModal');
 
-  // Trigger PDF.js selepas modal buka
   const ext = file.name.split('.').pop().toLowerCase();
-  if (ext === 'pdf') renderPDF(file.downloadURL);
+  if (ext === 'pdf')                        renderPDF(file.downloadURL);
+  if (ext === 'docx')                       renderDocx(file.downloadURL);
+  if (['xlsx','xls'].includes(ext))         renderExcel(file.downloadURL);
 }
