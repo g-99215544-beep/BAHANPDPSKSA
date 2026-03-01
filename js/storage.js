@@ -166,40 +166,51 @@ function buildViewerHTML(file) {
   const ext = file.name.split('.').pop().toLowerCase();
   const url = file.downloadURL;
 
-  // Gambar
+  // Gambar — terus papar, tiada delay
   if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
-    return `<img src="${escHtml(url)}" alt="${escHtml(file.name)}" style="max-width:100%;max-height:90vh;object-fit:contain;margin:auto;display:block;padding:1rem;">`;
+    return `<img src="${escHtml(url)}" alt="${escHtml(file.name)}"
+      style="max-width:100%;max-height:90vh;object-fit:contain;margin:auto;display:block;padding:1rem;">`;
   }
 
-  // Video
+  // Video — terus main
   if (['mp4','webm','ogg','mov'].includes(ext)) {
     return `
-      <video controls style="max-width:100%;max-height:90vh;margin:auto;display:block;">
+      <video controls autoplay style="max-width:100%;max-height:90vh;margin:auto;display:block;">
         <source src="${escHtml(url)}">
         <p style="color:#fff;text-align:center;padding:2rem;">Pelayar anda tidak menyokong video HTML5.</p>
       </video>`;
   }
 
-  // PDF — guna iframe
+  // PDF — render menggunakan PDF.js (halaman pertama muncul dalam ~1 saat)
   if (ext === 'pdf') {
-    return `<iframe src="${escHtml(url)}" title="${escHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"></iframe>`;
-  }
-
-  // Word / PowerPoint / Excel — guna Google Docs Viewer
-  if (['doc','docx','ppt','pptx','xls','xlsx'].includes(ext)) {
-    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-    return `<iframe src="${escHtml(viewerUrl)}" title="${escHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"
-      onload="this.dataset.loaded='1'"
-      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"></iframe>
-      <div class="viewer-fallback" style="display:none">
-        <div class="big-icon">📄</div>
-        <h4>${escHtml(file.name)}</h4>
-        <p>Fail tidak dapat dipapar secara langsung.<br>Sila muat turun untuk membukanya.</p>
-        <a href="${escHtml(url)}" target="_blank" download="${escHtml(file.name)}" class="btn-open-tab">⬇️ Muat Turun Fail</a>
+    return `
+      <div id="pdfContainer" style="overflow-y:auto;width:100%;height:100%;background:#525659;padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center;">
+        <div class="viewer-loading" id="viewerLoading">
+          <div class="viewer-spinner"></div>
+          <p>Memuatkan PDF...</p>
+        </div>
       </div>`;
   }
 
-  // Jenis lain — paparan fallback
+  // Word / PowerPoint / Excel — Google Docs Viewer + spinner
+  if (['doc','docx','ppt','pptx','xls','xlsx'].includes(ext)) {
+    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    return `
+      <div class="viewer-loading" id="viewerLoading">
+        <div class="viewer-spinner"></div>
+        <p>Memuatkan dokumen...<br><small>Ini mungkin mengambil masa 10–30 saat</small></p>
+        <a href="${escHtml(url)}" target="_blank" class="btn-open-tab" style="margin-top:1rem">
+          🔗 Buka di Tab Baru (lebih laju)
+        </a>
+      </div>
+      <iframe src="${escHtml(viewerUrl)}" title="${escHtml(file.name)}"
+        style="width:100%;height:100%;border:none;flex:1;display:none"
+        onload="document.getElementById('viewerLoading').style.display='none';this.style.display='block'"
+        onerror="document.getElementById('viewerLoading').innerHTML='<div class=viewer-fallback><div class=big-icon>📄</div><p>Fail tidak dapat dipapar.</p><a href=\'${escHtml(url)}\' target=\'_blank\' class=btn-open-tab>⬇️ Muat Turun</a></div>'">
+      </iframe>`;
+  }
+
+  // Jenis lain — fallback dengan muat turun
   return `
     <div class="viewer-fallback">
       <div class="big-icon">📎</div>
@@ -207,6 +218,50 @@ function buildViewerHTML(file) {
       <p>Jenis fail ini tidak boleh dipapar secara langsung.<br>Sila muat turun untuk membukanya.</p>
       <a href="${escHtml(url)}" target="_blank" download="${escHtml(file.name)}" class="btn-open-tab">⬇️ Muat Turun Fail</a>
     </div>`;
+}
+
+/**
+ * Render PDF menggunakan PDF.js — halaman pertama muncul serta-merta.
+ * @param {string} url - URL fail PDF
+ */
+async function renderPDF(url) {
+  const container = document.getElementById('pdfContainer');
+  const loadingEl = document.getElementById('viewerLoading');
+  if (!container) return;
+
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    if (loadingEl) loadingEl.remove();
+
+    // Render setiap halaman — halaman pertama terus nampak
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page     = await pdf.getPage(pageNum);
+      const scale    = Math.min(1.6, (container.clientWidth - 32) / page.getViewport({ scale: 1 }).width);
+      const viewport = page.getViewport({ scale });
+
+      const canvas  = document.createElement('canvas');
+      canvas.width  = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.cssText = 'max-width:100%;box-shadow:0 2px 12px rgba(0,0,0,0.4);background:#fff;';
+      container.appendChild(canvas);
+
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    }
+  } catch (e) {
+    console.error('PDF.js render error:', e);
+    if (container) {
+      container.innerHTML = `
+        <div class="viewer-fallback">
+          <div class="big-icon">📄</div>
+          <h4>PDF tidak dapat dipapar</h4>
+          <p>Sila muat turun fail untuk membukanya.</p>
+          <a href="${escHtml(url)}" target="_blank" download class="btn-open-tab">⬇️ Muat Turun PDF</a>
+        </div>`;
+    }
+  }
 }
 
 /**
@@ -220,4 +275,8 @@ function openFileViewer(file) {
   document.getElementById('viewerDlBtn').setAttribute('download', file.name);
   document.getElementById('viewerNewTabBtn').href = file.downloadURL;
   openModal('viewerModal');
+
+  // Trigger PDF.js selepas modal buka
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') renderPDF(file.downloadURL);
 }
