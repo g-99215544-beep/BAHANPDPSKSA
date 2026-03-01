@@ -451,10 +451,38 @@ async function doUpload() {
       progLabel.textContent = `Fail ${i+1} / ${filesToUpload.length}: ${escHtml(file.name)}`;
       progBar.style.width = '0%';
 
+      // Fasa 1: Upload fail original (0 → 80%)
       const { storagePath, downloadURL } = await uploadFileToStorage(
         file, ctx.sj, ctx.cat, ctx.year, ctx.tName,
-        pct => { progBar.style.width = pct + '%'; }
+        pct => { progBar.style.width = (pct * 0.8) + '%'; }
       );
+
+      // Fasa 2: Jana & upload thumbnail (80 → 100%)
+      let thumbnailURL = null;
+      let thumbPath    = null;
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      progLabel.textContent = `Fail ${i+1} / ${filesToUpload.length}: Jana pratonton...`;
+      progBar.style.width = '85%';
+
+      try {
+        let thumbBlob = null;
+        if (ext === 'pdf')  thumbBlob = await generatePdfThumbnail(file);
+        if (ext === 'docx') thumbBlob = await generateDocxThumbnail(file);
+
+        if (thumbBlob) {
+          const baseStoragePath = storagePath.replace(/\.[^/.]+$/, '');
+          const thumbResult = await uploadThumbnail(thumbBlob, baseStoragePath);
+          if (thumbResult) {
+            thumbPath    = thumbResult.thumbPath;
+            thumbnailURL = thumbResult.thumbnailURL;
+          }
+        }
+      } catch (thumbErr) {
+        console.warn('Thumbnail gagal, teruskan tanpa thumbnail:', thumbErr);
+      }
+
+      progBar.style.width = '100%';
 
       await dbSaveFile({
         id:          uid(),
@@ -469,6 +497,8 @@ async function doUpload() {
         tName:       ctx.tName,
         storagePath: storagePath,
         downloadURL: downloadURL,
+        thumbnailURL: thumbnailURL,
+        thumbPath:    thumbPath,
       });
       success++;
     }
@@ -513,6 +543,9 @@ async function delFile(id) {
   if (file && file.storagePath) {
     await deleteFileFromStorage(file.storagePath);
   }
+  if (file && file.thumbPath) {
+    await deleteFileFromStorage(file.thumbPath);
+  }
   await dbDeleteFile(id);
   toast('Fail dipadam', '');
   // S.files dikemas kini secara automatik melalui listener
@@ -528,6 +561,7 @@ async function delPeepTopic(idx) {
   );
   for (const f of topFiles) {
     await deleteFileFromStorage(f.storagePath);
+    if (f.thumbPath) await deleteFileFromStorage(f.thumbPath);
     await dbDeleteFile(f.id);
   }
 

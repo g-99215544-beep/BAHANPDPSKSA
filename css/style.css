@@ -303,6 +303,29 @@ header {
 .btn-open-tab { background: var(--accent); color: #fff; border: none; border-radius: 25px; padding: 10px 24px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer; text-decoration: none; display: inline-block; transition: background 0.2s; }
 .btn-open-tab:hover { background: var(--accent-dark); }
 
+/* ── THUMBNAIL VIEWER ──────────────────────────────────────────────────────── */
+.thumb-viewer {
+  display: flex; flex-direction: column;
+  align-items: center; width: 100%; height: 100%;
+  overflow-y: auto; background: #2a2f3a; padding: 1rem; gap: 1rem;
+}
+.thumb-img {
+  max-width: 100%; max-height: calc(100% - 60px);
+  object-fit: contain; border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.thumb-actions {
+  display: flex; gap: 0.75rem; flex-shrink: 0;
+}
+.btn-full-view {
+  background: rgba(255,255,255,0.12); color: #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 25px;
+  padding: 8px 20px; font-family: 'Nunito', sans-serif;
+  font-weight: 700; font-size: 0.85rem; cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-full-view:hover { background: rgba(255,255,255,0.22); }
+
 /* ── DOCX VIEWER ───────────────────────────────────────────── */
 .docx-container {
   width: 100%; height: 100%; overflow-y: auto;
