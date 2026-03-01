@@ -154,6 +154,90 @@ async function deleteFileFromStorage(storagePath) {
   }
 }
 
+// ── JANA THUMBNAIL ─────────────────────────────────────────────
+
+/**
+ * Jana thumbnail JPG halaman 1 daripada fail PDF tempatan.
+ * @param {File} file - File object PDF
+ * @returns {Promise<Blob|null>} - JPG blob atau null jika gagal
+ */
+async function generatePdfThumbnail(file) {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf  = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const page = await pdf.getPage(1);
+
+    const viewport = page.getViewport({ scale: 1 });
+    const scale    = Math.min(1.5, 900 / viewport.width);
+    const vp       = page.getViewport({ scale });
+
+    const canvas    = document.createElement('canvas');
+    canvas.width    = vp.width;
+    canvas.height   = vp.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+    return await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
+  } catch (e) {
+    console.warn('generatePdfThumbnail gagal:', e);
+    return null;
+  }
+}
+
+/**
+ * Jana thumbnail JPG halaman 1 daripada fail DOCX tempatan.
+ * @param {File} file - File object DOCX
+ * @returns {Promise<Blob|null>} - JPG blob atau null jika gagal
+ */
+async function generateDocxThumbnail(file) {
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText =
+    'position:fixed;left:-9999px;top:0;width:794px;min-height:1px;' +
+    'background:#fff;overflow:hidden;z-index:-1;';
+  document.body.appendChild(wrapper);
+  try {
+    await docx.renderAsync(file, wrapper, null, {
+      className: 'docx-render',
+      inWrapper: false,
+      ignoreWidth: true,
+      ignoreHeight: true,
+      ignoreFonts: false,
+      breakPages: false,
+      useBase64URL: true,
+    });
+    const canvas = await html2canvas(wrapper, {
+      scale: 0.7,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      width: 794,
+      height: Math.min(wrapper.scrollHeight, 1123),
+      windowWidth: 794,
+    });
+    return await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.8));
+  } catch (e) {
+    console.warn('generateDocxThumbnail gagal:', e);
+    return null;
+  } finally {
+    document.body.removeChild(wrapper);
+  }
+}
+
+/**
+ * Muat naik blob thumbnail JPG ke Firebase Storage.
+ * @param {Blob}   blob     - JPG blob
+ * @param {string} basePath - Path fail original (tanpa extension)
+ * @returns {Promise<{ thumbPath: string, thumbnailURL: string }>}
+ */
+async function uploadThumbnail(blob, basePath) {
+  const thumbPath = basePath + '_thumb.jpg';
+  const ref = fbStorage.ref(thumbPath);
+  const task = await ref.put(blob, { contentType: 'image/jpeg' });
+  const thumbnailURL = await task.ref.getDownloadURL();
+  return { thumbPath, thumbnailURL };
+}
+
 // ── PENONTON FAIL (VIEWER) ────────────────────────────────────
 
 /**
