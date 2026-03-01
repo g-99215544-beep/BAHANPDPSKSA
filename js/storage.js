@@ -185,10 +185,18 @@ function buildViewerHTML(file) {
     return `<iframe src="${escHtml(url)}" title="${escHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"></iframe>`;
   }
 
-  // Word / PowerPoint / Excel — guna Microsoft Office Online Viewer
+  // Word / PowerPoint / Excel — guna Google Docs Viewer
   if (['doc','docx','ppt','pptx','xls','xlsx'].includes(ext)) {
-    const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-    return `<iframe src="${escHtml(viewerUrl)}" title="${escHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"></iframe>`;
+    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    return `<iframe src="${escHtml(viewerUrl)}" title="${escHtml(file.name)}" style="width:100%;height:100%;border:none;flex:1;"
+      onload="this.dataset.loaded='1'"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"></iframe>
+      <div class="viewer-fallback" style="display:none">
+        <div class="big-icon">📄</div>
+        <h4>${escHtml(file.name)}</h4>
+        <p>Fail tidak dapat dipapar secara langsung.<br>Sila muat turun untuk membukanya.</p>
+        <a href="${escHtml(url)}" target="_blank" download="${escHtml(file.name)}" class="btn-open-tab">⬇️ Muat Turun Fail</a>
+      </div>`;
   }
 
   // Jenis lain — paparan fallback
