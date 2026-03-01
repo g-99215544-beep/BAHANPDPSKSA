@@ -12,6 +12,10 @@
       ".read": true,
       ".write": "auth != null"
     },
+    "dskpCustom": {
+      ".read": true,
+      ".write": "auth != null"
+    },
     "stats": {
       ".read": true,
       "downloads": {

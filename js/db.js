@@ -55,6 +55,29 @@ async function dbSavePeep(sj, year, list) {
   await fbDB.ref(`peep/${sj}/${year}`).set(list);
 }
 
+// ── NAMA TAJUK LATIHAN TERSUAI (DSKP CUSTOM) ──────────────────
+
+/**
+ * Dengar perubahan nama tajuk tersuai secara masa nyata.
+ * @param {function} callback - fn(dskpCustomObj)
+ */
+function dbListenDskpCustom(callback) {
+  fbDB.ref('dskpCustom').on('value', snap => {
+    callback(snap.val() || {});
+  });
+}
+
+/**
+ * Simpan nama tajuk tersuai untuk satu topik.
+ * @param {string} sj    - ID subjek
+ * @param {number} year  - Tahun (1–6)
+ * @param {number} idx   - Indeks topik
+ * @param {string} name  - Nama baharu
+ */
+async function dbSaveDskpCustom(sj, year, idx, name) {
+  await fbDB.ref(`dskpCustom/${sj}/${year}/${idx}`).set(name);
+}
+
 // ── STATISTIK ─────────────────────────────────────────────────
 
 /**

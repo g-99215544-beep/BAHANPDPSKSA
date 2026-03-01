@@ -15,6 +15,7 @@ let S = {
   // Data dari Firebase (dikemaskini secara masa nyata)
   files:      [],      // Semua fail
   peepData:   {},      // Topik peperiksaan { bm: { 1: ['Ujian 1', ...] } }
+  dskpCustom: {},      // Nama tajuk tersuai { math: { 5: { 1: 'Pecahan, Perpuluhan...' } } }
   stats:      { downloads: 0 },
 };
 
@@ -38,6 +39,11 @@ function init() {
     renderStats();
   });
 
+  dbListenDskpCustom(custom => {
+    S.dskpCustom = custom || {};
+    reRender();
+  });
+
   renderSidebar();
   renderStats();
   renderAuth();
@@ -49,6 +55,11 @@ function init() {
 /** Dapatkan topik peperiksaan dari cache */
 function getPeep(sj, y) {
   return (S.peepData[sj] && S.peepData[sj][y]) ? S.peepData[sj][y] : [];
+}
+
+/** Dapatkan nama tajuk latihan — custom jika ada, DSKP jika tidak */
+function getTopicName(sj, year, idx) {
+  return (S.dskpCustom[sj]?.[year]?.[idx]) || DSKP[sj][year][idx];
 }
 
 // ── SIDEBAR ───────────────────────────────────────────────────
@@ -212,12 +223,15 @@ function viewTopics() {
       <p>${S.loggedIn ? 'Tambah peperiksaan/ujian baharu menggunakan butang di atas.' : 'Belum ada topik untuk tahun ini.'}</p>
     </div>`;
   } else {
-    topicsHtml = `<div class="topic-list">${topics.map((tName, idx) => {
+    topicsHtml = `<div class="topic-list">${topics.map((rawName, idx) => {
+      const tName  = isLat ? getTopicName(S.subj, S.year, idx) : rawName;
       const tFiles = S.files.filter(f =>
         f.sj === S.subj && f.cat === S.cat && f.year === S.year && f.ti === idx
       );
       const delPeepBtn = S.loggedIn && !isLat
         ? `<button class="btn-sm btn-del" onclick="delPeepTopic(${idx})" title="Padam topik" style="margin-left:4px">🗑️</button>` : '';
+      const editBtn = S.loggedIn && isLat
+        ? `<button class="btn-sm btn-edit-topic" onclick="event.stopPropagation();startEditTopic(${idx})" title="Edit nama tajuk">✏️</button>` : '';
       const uploadTopicBtn = S.loggedIn
         ? `<div class="upload-to-topic">
              <button class="btn-upload-topic" onclick="openUploadToTopic(${idx},'${tName.replace(/'/g,"\\'")}')">
@@ -225,12 +239,12 @@ function viewTopics() {
              </button>
            </div>` : '';
 
-      return `<div class="topic-card">
+      return `<div class="topic-card" data-idx="${idx}">
         <div class="topic-header" onclick="toggleTopic(this)">
           <div class="topic-num">${idx + 1}</div>
           <div class="topic-name">${escHtml(tName)}</div>
           <div class="topic-file-count">${tFiles.length} fail</div>
-          ${delPeepBtn}
+          ${editBtn}${delPeepBtn}
           <div class="topic-chevron">▼</div>
         </div>
         <div class="topic-files">
@@ -348,7 +362,7 @@ function openUploadModal() {
       <label>Pilih Tajuk</label>
       <select id="topicSel" onchange="S.uploadCtx.ti=parseInt(this.value);S.uploadCtx.tName=this.options[this.selectedIndex].text.substring(4)">
         <option value="">-- Pilih tajuk --</option>
-        ${topics.map((t, i) => `<option value="${i}">${i+1}. ${escHtml(t)}</option>`).join('')}
+        ${topics.map((t, i) => `<option value="${i}">${i+1}. ${escHtml(getTopicName(S.subj, S.year, i))}</option>`).join('')}
       </select>
     </div>`;
   resetUploadModal();
@@ -529,6 +543,37 @@ async function delPeepTopic(idx) {
   tops.splice(idx, 1);
   await dbSavePeep(S.subj, S.year, tops);
   toast('Topik dipadam', '');
+}
+
+// ── EDIT NAMA TAJUK LATIHAN ───────────────────────────────────
+
+/** Tunjukkan input inline untuk edit nama tajuk */
+function startEditTopic(idx) {
+  const card   = document.querySelector(`.topic-card[data-idx="${idx}"]`);
+  if (!card) return;
+  const nameEl = card.querySelector('.topic-name');
+  const current = getTopicName(S.subj, S.year, idx);
+  nameEl.innerHTML = `
+    <input class="topic-edit-input" type="text" value="${escHtml(current)}"
+           onkeydown="if(event.key==='Enter'){event.preventDefault();saveTopicName(${idx},this.value)}
+                      else if(event.key==='Escape') reRender()">
+    <button class="btn-edit-confirm" onclick="saveTopicName(${idx},this.previousElementSibling.value)" title="Simpan">✓</button>
+    <button class="btn-edit-cancel"  onclick="reRender()" title="Batal">✕</button>`;
+  nameEl.querySelector('input').focus();
+  nameEl.querySelector('input').select();
+}
+
+/** Simpan nama tajuk baharu ke Firebase */
+async function saveTopicName(idx, newName) {
+  newName = newName.trim();
+  if (!newName) { toast('⚠️ Nama tajuk tidak boleh kosong!', 'error'); return; }
+  try {
+    await dbSaveDskpCustom(S.subj, S.year, idx, newName);
+    toast('✅ Nama tajuk dikemaskini!', 'success');
+  } catch (e) {
+    console.error('Gagal simpan nama tajuk:', e);
+    toast('❌ Gagal simpan. Cuba lagi.', 'error');
+  }
 }
 
 // ── MODAL HELPERS ─────────────────────────────────────────────
