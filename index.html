@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Bahan Pembelajaran</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📚</div>
+    Portal Bahan Pembelajaran
+  </div>
+  <div class="header-right">
+    <div class="stats-mini" id="statsBar"></div>
+    <div id="authArea"></div>
+  </div>
+</header>
+
+<!-- ══════════════════ HERO / CARIAN ══════════════════ -->
+<div class="hero">
+  <div class="hero-content">
+    <h1>📖 Pusat Sumber Digital Sekolah</h1>
+    <p>Cari dan lihat bahan pembelajaran dengan mudah — percuma untuk semua guru</p>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Cari nama fail, tajuk, subjek..." oninput="handleSearch(this.value)">
+      <button onclick="handleSearch(document.getElementById('searchInput').value)">🔍</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ BREADCRUMB ══════════════════ -->
+<div class="breadcrumb-bar" id="bcBar" style="display:none"></div>
+
+<!-- ══════════════════ LAYOUT UTAMA ══════════════════ -->
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Subjek</div>
+    <div id="sidebarEl"></div>
+  </aside>
+  <div class="content" id="mainEl">
+    <!-- Kandungan dirender oleh JavaScript -->
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <div>Memuat data...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL: LOG MASUK ══════════════════ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h2>🔐 Log Masuk Guru</h2>
+    <p class="modal-sub">Masukkan maklumat untuk menguruskan bahan pembelajaran</p>
+    <div class="error-msg" id="loginErr"></div>
+    <div class="form-group">
+      <label>Nama Pengguna</label>
+      <input type="text" id="loginUser" placeholder="guru" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Kata Laluan</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Log Masuk</button>
+    <button class="btn-cancel" onclick="closeModal('loginModal')">Batal</button>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL: MUAT NAIK ══════════════════ -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal modal-big">
+    <h2>⬆️ Muat Naik Fail</h2>
+    <p class="modal-sub" id="uploadSubtitle"></p>
+    <div class="success-msg" id="uploadOk">✅ Fail berjaya dimuat naik!</div>
+
+    <!-- Medan dinamik (pilih tajuk / info tajuk) -->
+    <div id="uploadFields"></div>
+
+    <!-- Kawasan seret & lepas -->
+    <div class="file-drop" id="fileDrop"
+         onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('dragover')"
+         ondragleave="this.classList.remove('dragover')"
+         ondrop="onDrop(event)">
+      <div class="file-drop-icon">📂</div>
+      <p>Klik atau seret fail ke sini</p>
+      <small>PDF · Word · PowerPoint · Excel · Gambar · Video &mdash; maks. 50 MB setiap fail</small>
+    </div>
+    <input type="file" id="fileInput" multiple
+           accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.mov"
+           onchange="onFileSelect(this.files)">
+
+    <!-- Senarai fail dipilih -->
+    <div class="sel-files-list" id="selFilesList"></div>
+
+    <!-- Bar kemajuan muat naik -->
+    <div class="upload-progress" id="uploadProgress">
+      <div class="progress-label"></div>
+      <div class="progress-track">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="uploadBtn" onclick="doUpload()" style="margin-top:1rem">
+      Muat Naik Semua Fail
+    </button>
+    <button class="btn-cancel" onclick="closeModal('uploadModal')">Batal</button>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL: TAMBAH PEPERIKSAAN ══════════════════ -->
+<div class="modal-overlay" id="addPeepModal">
+  <div class="modal">
+    <h2>➕ Tambah Peperiksaan / Ujian</h2>
+    <p class="modal-sub" id="addPeepSub"></p>
+    <div class="form-group">
+      <label>Nama Peperiksaan / Ujian</label>
+      <input type="text" id="peepNameInput"
+             placeholder="cth: Ujian Bulanan Mac 2025, Peperiksaan Pertengahan Tahun"
+             onkeydown="if(event.key==='Enter') doAddPeep()">
+    </div>
+    <button class="btn-primary" onclick="doAddPeep()">Tambah</button>
+    <button class="btn-cancel" onclick="closeModal('addPeepModal')">Batal</button>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL: PENONTON FAIL (VIEWER) ══════════════════ -->
+<div class="modal-overlay viewer-overlay" id="viewerModal">
+  <div class="modal viewer-modal">
+    <div class="viewer-header">
+      <h3 id="viewerTitle"></h3>
+      <div class="viewer-actions">
+        <a class="btn-view" id="viewerNewTabBtn" href="#" target="_blank" rel="noopener">
+          🔗 Tab Baru
+        </a>
+        <a class="btn-view" id="viewerDlBtn" href="#" download style="background:var(--green)">
+          ⬇️ Muat Turun
+        </a>
+        <button class="btn-sm" onclick="closeModal('viewerModal')"
+                style="background:#374151;color:#fff;font-size:1rem;width:32px;height:32px;">✕</button>
+      </div>
+    </div>
+    <div id="viewerContent" class="viewer-content"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ TOAST ══════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════ FIREBASE SDK (Compat) ══════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<!-- ══════════════════ FAIL JS APLIKASI ══════════════════ -->
+<script src="js/data.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
